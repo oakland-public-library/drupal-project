@@ -64,7 +64,7 @@ services:
     labels:
       - 'traefik.backend=nginx'
       - 'traefik.port=80'
-      - 'traefik.frontend.rule=Host:${PROJECT_BASE_URL}'
+      - 'traefik.frontend.rule=Host:staff.${PROJECT_BASE_URL}'
       - 'traefik.frontend.auth.basic.users=${SITE_BASIC_AUTH}'
       - 'traefik.frontend.auth.basic.removeHeader=true'
 
@@ -269,18 +269,30 @@ services:
 #      - 'traefik.port=8080'
 #      - 'traefik.frontend.rule=Host:xhprof.${PROJECT_BASE_URL}'
 
-  portainer:
-    image: portainer/portainer
-    container_name: "${PROJECT_NAME}_portainer"
-    command: --no-auth -H unix:///var/run/docker.sock
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+  shoutbomb-signup:
+    container_name: "${PROJECT_NAME}-shoutbomb-signup"
+    image: shoutbomb-signup
+    environment:
+      SMTP_HOST: opensmtpd
+      SMTP_USER: $SMTP_USER
+      SHOUTBOMB_EMAIL: $SHOUTBOMB_EMAIL
     labels:
-      - 'traefik.backend=portainer'
-      - 'traefik.port=9000'
-      - 'traefik.frontend.rule=Host:portainer.${PROJECT_BASE_URL}'
-      - 'traefik.frontend.auth.basic.users=${ADMIN_BASIC_AUTH}'
-      - 'traefik.frontend.auth.basic.removeHeader=true'
+      - 'traefik.backend=shoutbomb'
+      - 'traefik.port=80'
+      - 'traefik.frontend.rule=Host:app.${PROJECT_BASE_URL}'
+
+  # portainer:
+  #   image: portainer/portainer
+  #   container_name: "${PROJECT_NAME}_portainer"
+  #   command: --no-auth -H unix:///var/run/docker.sock
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   labels:
+  #     - 'traefik.backend=portainer'
+  #     - 'traefik.port=9000'
+  #     - 'traefik.frontend.rule=Host:app.${PROJECT_BASE_URL}'
+  #     - 'traefik.frontend.auth.basic.users=${ADMIN_BASIC_AUTH}'
+  #     - 'traefik.frontend.auth.basic.removeHeader=true'
 
   traefik:
     image: traefik
@@ -294,9 +306,7 @@ services:
       --acme.entrypoint=https \
       --acme.httpchallenge \
       --acme.httpchallenge.entrypoint=http \
-      --acme.domains="${PROJECT_BASE_URL},\
-                      solr.${PROJECT_BASE_URL},\
-                      portainer.${PROJECT_BASE_URL}"
+      --acme.domains="staff.${PROJECT_BASE_URL},app.${PROJECT_BASE_URL}"
       --acme.email="${SMTP_USER}"
     labels:
       - 'traefik.backend=traefik'
@@ -305,7 +315,7 @@ services:
     ports:
       - '80:80'
       - '443:443'
-      # - '8080:8080' # Dashboard
+      - '8080:8080' # Dashboard
     volumes:
       - ./traefik:/etc/traefik/
       - /var/run/docker.sock:/var/run/docker.sock
